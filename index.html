@@ -219,14 +219,14 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,15,30,.95);backdrop-
 </div>
 
 <!-- MODAL: start -->
-<div class="modal-ov" id="modal-start" onclick="closeModal('modal-start')">
+<div class="modal-ov" id="modal-start" onclick="selFav=null;closeModal('modal-start')">
   <div class="modal-inner" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-title">🚉 Démarrer le trajet</div>
     <div class="modal-fav-name" id="m-fav-name"></div>
     <div class="modal-detail" id="m-fav-detail"></div>
     <button class="btn btn-pri" onclick="startJourney()">▶ Démarrer le suivi</button>
-    <button class="btn btn-out" onclick="closeModal('modal-start')">Annuler</button>
+    <button class="btn btn-out" onclick="selFav=null;closeModal('modal-start')">Annuler</button>
   </div>
 </div>
 
@@ -382,13 +382,15 @@ function openModal(favId) {
   document.getElementById('m-fav-detail').textContent = selFav.dep+' → '+selFav.arr+(selFav.from?' | '+selFav.from+(selFav.to?' → '+selFav.to:''):'');
   document.getElementById('modal-start').classList.add('open');
 }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); selFav=null; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ─── ACTIVE JOURNEY ───────────────────────────────────────────────────────────
 function startJourney() {
-  closeModal('modal-start');
   if (!selFav) return;
-  active = {id:uid(), fav:selFav, departTs:null, arriveTs:null, startedAt:nowTs(), note:''};
+  const fav = selFav;
+  selFav = null;
+  closeModal('modal-start');
+  active = {id:uid(), fav:fav, departTs:null, arriveTs:null, startedAt:nowTs(), note:''};
   save(); renderFavs(); renderActiveJourney();
   toast('🚀 Trajet démarré !');
 }
