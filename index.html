@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TrainLog">
+<link rel="manifest" href="manifest.json">
+<title>TrainLog</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0a0f1e;--s1:#111827;--s2:#1a2235;--bd:#1e2d45;--ac:#3b82f6;--cy:#06b6d4;--gr:#10b981;--rd:#ef4444;--or:#f59e0b;--tx:#f0f4ff;--mu:#6b7a99;--mono:'Space Mono',monospace;--sans:'Syne',sans-serif}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100dvh;overflow-x:hidden;max-width:430px;margin:0 auto}
+header{position:sticky;top:0;z-index:100;background:rgba(10,15,30,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--cy);letter-spacing:-.5px}
+.logo span{color:var(--ac)}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.timer-pill{font-family:var(--mono);font-size:12px;color:var(--cy);background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);padding:3px 10px;border-radius:20px;display:none}
+.hdr-date{font-size:11px;color:var(--mu);font-family:var(--mono)}
+.tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--s1);position:sticky;top:57px;z-index:90}
+.tab{flex:1;padding:12px 8px;font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--mu);cursor:pointer;transition:all .2s}
+.tab.active{color:var(--cy);border-bottom-color:var(--cy)}
+.view{display:none;padding:16px;padding-bottom:48px}
+.view.active{display:block}
+.sec{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--mu);margin-bottom:12px;margin-top:4px}
+/* FORM */
+.form-box{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+.row{display:flex;gap:10px;margin-bottom:12px}
+.fg{flex:1;display:flex;flex-direction:column;gap:6px}
+.fg label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mu);font-family:var(--mono)}
+.fg input,.fg textarea{background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-family:var(--mono);font-size:15px;padding:10px 12px;border-radius:8px;width:100%;outline:none;transition:border-color .2s}
+.fg input:focus,.fg textarea:focus{border-color:var(--ac)}
+.fg textarea{resize:none;font-family:var(--sans);font-size:14px;height:80px}
+/* BUTTONS */
+.btn{width:100%;padding:13px;font-family:var(--sans);font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer;transition:all .15s;margin-bottom:8px}
+.btn:last-child{margin-bottom:0}
+.btn:active{transform:scale(.97)}
+.btn-pri{background:var(--ac);color:#fff}
+.btn-out{background:none;border:1px solid var(--bd);color:var(--tx)}
+.btn-red{background:none;border:1px solid var(--rd);color:var(--rd)}
+.btn-exp{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--s1);border:1px solid var(--bd);color:var(--tx)}
+/* FAV CARD */
+.fav-card{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;cursor:pointer;position:relative;overflow:hidden;margin-bottom:10px;transition:border-color .2s}
+.fav-card.sel{border-color:var(--cy)}
+.fav-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);border-radius:3px 0 0 3px}
+.fav-card.sel::before{background:var(--cy)}
+.fav-card:active{transform:scale(.98)}
+.fav-hdr{display:flex;justify-content:space-between;align-items:flex-start}
+.fav-name{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.fav-del{background:none;border:none;color:var(--mu);font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1}
+.fav-times{display:flex;align-items:center;gap:10px;margin-top:8px}
+.fav-t{font-family:var(--mono);font-size:20px;font-weight:700}
+.fav-arr{color:var(--mu);font-size:14px}
+.fav-route{font-size:11px;color:var(--mu);margin-top:4px}
+.fav-stats{margin-top:8px;display:flex;gap:8px;font-size:10px;color:var(--mu);font-family:var(--mono)}
+.badge-alert{font-size:10px;background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3);padding:1px 6px;border-radius:10px;font-family:var(--mono)}
+/* ACTIVE JOURNEY */
+.aj{background:linear-gradient(135deg,var(--s1),#0d1a2e);border:1px solid var(--ac);border-radius:14px;padding:18px;margin-bottom:16px}
+.aj-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cy);font-family:var(--mono);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.aj-name{font-size:17px;font-weight:800;margin-bottom:4px}
+.aj-times{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--cy);margin-bottom:12px}
+.prog-bar{height:3px;background:var(--bd);border-radius:2px;margin-bottom:16px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--cy));transition:width 1s linear;border-radius:2px}
+.sig-row{display:flex;gap:10px;margin-bottom:10px}
+.sig-btn{flex:1;padding:14px 10px;border-radius:10px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;border:none}
+.sig-btn:active{transform:scale(.96)}
+.sig-btn .si{font-size:22px}
+.sig-btn .sl{font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.sig-btn .st{font-family:var(--mono);font-size:12px}
+.sig-dep{background:rgba(59,130,246,.15);border:1px solid var(--ac)!important;color:var(--ac)}
+.sig-dep.done{background:rgba(59,130,246,.3)}
+.sig-arr{background:rgba(16,185,129,.15);border:1px solid var(--gr)!important;color:var(--gr)}
+.sig-arr.done{background:rgba(16,185,129,.3)}
+.btn-cancel{background:none;border:1px solid var(--bd);color:var(--mu);width:100%;padding:10px;border-radius:8px;font-family:var(--sans);font-size:12px;cursor:pointer;font-weight:700}
+/* JOURNAL */
+.filters{display:flex;flex-wrap:wrap;margin-bottom:14px}
+.fil-btn{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;background:var(--s1);border:1px solid var(--bd);color:var(--mu);cursor:pointer;margin-right:6px;margin-bottom:6px;transition:all .15s;font-family:var(--sans)}
+.fil-btn.active{background:var(--ac);border-color:var(--ac);color:#fff}
+.swipe-wrap{position:relative;margin-bottom:8px;border-radius:10px;overflow:hidden}
+.swipe-del-bg{position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--rd);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border-radius:0 10px 10px 0}
+.log-card{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;position:relative;z-index:1;transition:transform .25s ease;touch-action:pan-y}
+.log-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.log-name{font-size:13px;font-weight:700}
+.log-date{font-size:10px;color:var(--mu);font-family:var(--mono)}
+.log-times{display:flex;gap:16px}
+.lt-lbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--mu)}
+.lt-val{font-family:var(--mono);font-size:13px}
+.lt-real{font-size:10px;color:var(--mu);margin-top:2px}
+.delay-tag{font-size:11px;padding:1px 5px;border-radius:4px;margin-left:4px}
+.log-note{font-size:11px;color:var(--mu);margin-top:6px;font-style:italic}
+.hint{font-size:11px;color:var(--mu);margin-bottom:12px;font-family:var(--mono)}
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-c{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.stat-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mu);font-family:var(--mono);margin-bottom:6px}
+.stat-val{font-family:var(--mono);font-size:26px;font-weight:700}
+.stat-sub{font-size:10px;color:var(--mu);margin-top:2px}
+.chart-box{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+.chart-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--mu);margin-bottom:12px}
+.bar-row{display:flex;align-items:flex-end;gap:6px;height:80px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.bar{width:100%;border-radius:4px 4px 0 0;min-height:2px}
+.bar-lbl{font-family:var(--mono);font-size:9px;color:var(--mu)}
+.bar-lbl2{font-family:var(--mono);font-size:8px;color:#2a3a55}
+.pr-card{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.pr-top{display:flex;justify-content:space-between;align-items:center}
+.pr-name{font-size:13px;font-weight:700}
+.pr-pct{font-family:var(--mono);font-size:13px;font-weight:700}
+.pr-bar-wrap{margin-top:8px;height:4px;background:var(--bd);border-radius:2px}
+.pr-bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.pr-sub{font-size:10px;color:var(--mu);margin-top:4px;font-family:var(--mono)}
+/* DOW chart */
+.dow-row{display:flex;align-items:flex-end;gap:6px;height:70px}
+.dow-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+/* HEATMAP */
+.hm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.hm-cell{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.hm-cell span{font-size:9px}
+.hm-legend{display:flex;gap:12px;margin-top:10px;justify-content:center}
+.hm-dot{width:10px;height:10px;border-radius:2px}
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:flex-end}
+.modal-ov.open{display:flex}
+.modal-inner{background:var(--s1);border-radius:20px 20px 0 0;width:100%;padding:24px 20px 44px;border-top:1px solid var(--bd);animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto 20px}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:16px}
+.modal-fav-name{font-size:17px;font-weight:700;margin-bottom:6px}
+.modal-detail{font-family:var(--mono);font-size:14px;color:var(--cy);margin-bottom:20px}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:300;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--mu)}
+.empty .ei{font-size:40px;margin-bottom:10px}
+.divider{height:1px;background:var(--bd);margin:16px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Train<span>Log</span></div>
+  <div class="hdr-right">
+    <div class="timer-pill" id="timer-pill">⏱ 0:00</div>
+    <div class="hdr-date" id="hdr-date"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('trajets',this)">🚉 Trajets</button>
+  <button class="tab" onclick="switchTab('journal',this)">📋 Journal</button>
+  <button class="tab" onclick="switchTab('stats',this)">📊 Stats</button>
+</div>
+
+<!-- ══ TRAJETS ══ -->
+<div class="view active" id="view-trajets">
+  <div id="aj-block" style="display:none">
+    <div class="aj">
+      <div class="aj-label"><span>▶ TRAJET EN COURS</span><span id="aj-elapsed">0:00</span></div>
+      <div class="aj-name" id="aj-name"></div>
+      <div class="aj-times" id="aj-times"></div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="sig-row">
+        <button class="sig-btn sig-dep" id="btn-dep" onclick="signalDep()">
+          <span class="si">🚀</span><span class="sl">Départ</span><span class="st" id="dep-shown">—</span>
+        </button>
+        <button class="sig-btn sig-arr" id="btn-arr" onclick="signalArr()">
+          <span class="si">🏁</span><span class="sl">Arrivée</span><span class="st" id="arr-shown">—</span>
+        </button>
+      </div>
+      <button class="btn-cancel" onclick="cancelJourney()">✕ Annuler ce trajet</button>
+    </div>
+  </div>
+
+  <div class="form-box">
+    <div class="sec">Ajouter un favori</div>
+    <div class="row"><div class="fg" style="flex:2"><label>Nom du trajet</label><input id="f-name" placeholder="ex: Metz → Paris matin" maxlength="40"></div></div>
+    <div class="row">
+      <div class="fg"><label>Départ prévu</label><input type="time" id="f-dep"></div>
+      <div class="fg"><label>Arrivée prévue</label><input type="time" id="f-arr"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Gare départ</label><input id="f-from" placeholder="Metz-Ville"></div>
+      <div class="fg"><label>Gare arrivée</label><input id="f-to" placeholder="Paris-Est"></div>
+    </div>
+    <button class="btn btn-pri" onclick="addFav()">＋ Ajouter aux favoris</button>
+  </div>
+
+  <div class="sec">Mes favoris</div>
+  <div id="fav-list"></div>
+</div>
+
+<!-- ══ JOURNAL ══ -->
+<div class="view" id="view-journal">
+  <div class="filters">
+    <button class="fil-btn active" onclick="setFilter('all',this)">Tous</button>
+    <button class="fil-btn" onclick="setFilter('on-time',this)">✅ À l'heure</button>
+    <button class="fil-btn" onclick="setFilter('late',this)">⚠️ Retard</button>
+    <button class="fil-btn" onclick="setFilter('incomplete',this)">⏳ Incomplet</button>
+  </div>
+  <div class="hint">← Glissez vers la gauche pour supprimer</div>
+  <div id="log-list"></div>
+</div>
+
+<!-- ══ STATS ══ -->
+<div class="view" id="view-stats">
+  <div class="stat-grid" id="stat-grid"></div>
+  <div id="trend-chart"></div>
+  <div id="dow-chart"></div>
+  <div id="heatmap"></div>
+  <div id="recent-bars"></div>
+  <div id="per-route"></div>
+  <div class="divider"></div>
+  <button class="btn btn-exp" onclick="exportCSV()">⬇ Exporter en CSV</button>
+  <button class="btn btn-red" onclick="clearAll()">🗑 Effacer toutes les données</button>
+</div>
+
+<!-- MODAL: start -->
+<div class="modal-ov" id="modal-start" onclick="closeModal('modal-start')">
+  <div class="modal-inner" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🚉 Démarrer le trajet</div>
+    <div class="modal-fav-name" id="m-fav-name"></div>
+    <div class="modal-detail" id="m-fav-detail"></div>
+    <button class="btn btn-pri" onclick="startJourney()">▶ Démarrer le suivi</button>
+    <button class="btn btn-out" onclick="closeModal('modal-start')">Annuler</button>
+  </div>
+</div>
+
+<!-- MODAL: note -->
+<div class="modal-ov" id="modal-note">
+  <div class="modal-inner">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🏁 Arrivée enregistrée</div>
+    <p style="font-size:13px;color:var(--mu);margin-bottom:16px">Ajouter une note (optionnel)</p>
+    <div class="fg" style="margin-bottom:16px"><textarea id="note-input" placeholder="ex: grève partielle, panne, travaux..." maxlength="100"></textarea></div>
+    <button class="btn btn-pri" onclick="confirmArrive()">✓ Confirmer l'arrivée</button>
+    <button class="btn btn-out" onclick="skipNote()">Passer sans note</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+let favs   = LS.get('tl_favs')   || [];
+let logs   = LS.get('tl_logs')   || [];
+let active = LS.get('tl_active') || null;
+let filterMode = 'all';
+let selFav = null;
+let timerInterval = null;
+
+function save() {
+  LS.set('tl_favs',   favs);
+  LS.set('tl_logs',   logs);
+  LS.set('tl_active', active);
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const nowTs = () => Date.now();
+const pad = n => String(n).padStart(2,'0');
+const tsToTime = ts => { if (!ts) return '—'; const d=new Date(ts); return pad(d.getHours())+':'+pad(d.getMinutes()); };
+const tsToDate = ts => { if (!ts) return ''; return new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); };
+const tsToShort = ts => { if (!ts) return ''; return new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}); };
+const DAY_NAMES  = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const MONTH_NAMES= ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+function delayMin(theoretical, actualTs) {
+  if (!actualTs || !theoretical) return null;
+  const [h,m] = theoretical.split(':').map(Number);
+  const base = new Date(actualTs); base.setHours(h,m,0,0);
+  return Math.round((actualTs - base.getTime()) / 60000);
+}
+function fmtDelay(min) {
+  if (min === null) return '';
+  if (min <= 0) return min === 0 ? "✓ À l'heure" : `✓ ${Math.abs(min)}min avance`;
+  return `+${min} min`;
+}
+function delayColor(min) {
+  if (min === null) return '#6b7a99';
+  if (min <= 2) return '#10b981';
+  if (min <= 10) return '#f59e0b';
+  return '#ef4444';
+}
+function entryStatus(e) {
+  if (!e.departTs || !e.arriveTs) return 'incomplete';
+  const d = delayMin(e.fav.arr, e.arriveTs);
+  if (d <= 2) return 'on-time';
+  if (d <= 10) return 'late';
+  return 'very-late';
+}
+const STATUS_COLOR = { 'on-time':'#10b981','late':'#f59e0b','very-late':'#ef4444','incomplete':'#6b7a99' };
+function fmtElapsed(ms) {
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+  if (h>0) return `${h}h${pad(m%60)}`;
+  return `${m}:${pad(s%60)}`;
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ─── HEADER ───────────────────────────────────────────────────────────────────
+function updateDate() {
+  document.getElementById('hdr-date').textContent =
+    new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase();
+}
+updateDate(); setInterval(updateDate, 60000);
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-'+id).classList.add('active');
+  if (id==='journal') renderLog();
+  if (id==='stats')   renderStats();
+}
+
+// ─── FAVORITES ────────────────────────────────────────────────────────────────
+function addFav() {
+  const name=document.getElementById('f-name').value.trim();
+  const dep =document.getElementById('f-dep').value;
+  const arr =document.getElementById('f-arr').value;
+  const from=document.getElementById('f-from').value.trim();
+  const to  =document.getElementById('f-to').value.trim();
+  if (!name||!dep||!arr) { toast('⚠️ Nom, départ et arrivée requis'); return; }
+  favs.push({id:uid(),name,dep,arr,from,to}); save(); renderFavs();
+  ['f-name','f-dep','f-arr','f-from','f-to'].forEach(id=>document.getElementById(id).value='');
+  toast('⭐ Favori ajouté !');
+}
+
+function renderFavs() {
+  const list = document.getElementById('fav-list');
+  if (!favs.length) {
+    list.innerHTML = '<div class="empty"><div class="ei">⭐</div><div>Aucun trajet favori.<br>Ajoutez-en un ci-dessus.</div></div>';
+    return;
+  }
+  const complete = logs.filter(e=>e.departTs&&e.arriveTs&&!e.cancelled);
+  list.innerHTML = favs.map(fav => {
+    const fc = complete.filter(e=>e.fav.id===fav.id);
+    const favAvg = fc.length ? Math.round(fc.map(e=>delayMin(e.fav.arr,e.arriveTs)??0).reduce((a,b)=>a+b,0)/fc.length) : null;
+    const alert = favAvg!==null && favAvg>5;
+    const sel = active && active.fav.id===fav.id;
+    return `<div class="fav-card${sel?' sel':''}" onclick="openModal('${fav.id}')">
+      <div class="fav-hdr">
+        <div class="fav-name">${fav.name}${alert?`<span class="badge-alert">moy +${favAvg}min</span>`:''}</div>
+        <button class="fav-del" onclick="event.stopPropagation();deleteFav('${fav.id}')">×</button>
+      </div>
+      <div class="fav-times">
+        <span class="fav-t">${fav.dep}</span>
+        <span class="fav-arr">→</span>
+        <span class="fav-t">${fav.arr}</span>
+      </div>
+      ${fav.from||fav.to ? `<div class="fav-route">${fav.from||''}${fav.from&&fav.to?' → ':''}${fav.to||''}</div>`:''}
+      ${fc.length ? `<div class="fav-stats"><span>${fc.length} trajets</span>${favAvg!==null?`<span style="color:${delayColor(favAvg)}">· moy ${favAvg>0?'+':''}${favAvg}min</span>`:''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function deleteFav(id) { favs=favs.filter(f=>f.id!==id); save(); renderFavs(); }
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function openModal(favId) {
+  if (active) { toast('⚠️ Un trajet est déjà en cours'); return; }
+  selFav = favs.find(f=>f.id===favId);
+  if (!selFav) return;
+  document.getElementById('m-fav-name').textContent = selFav.name;
+  document.getElementById('m-fav-detail').textContent = selFav.dep+' → '+selFav.arr+(selFav.from?' | '+selFav.from+(selFav.to?' → '+selFav.to:''):'');
+  document.getElementById('modal-start').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); selFav=null; }
+
+// ─── ACTIVE JOURNEY ───────────────────────────────────────────────────────────
+function startJourney() {
+  closeModal('modal-start');
+  if (!selFav) return;
+  active = {id:uid(), fav:selFav, departTs:null, arriveTs:null, startedAt:nowTs(), note:''};
+  save(); renderFavs(); renderActiveJourney();
+  toast('🚀 Trajet démarré !');
+}
+
+function signalDep() {
+  if (!active||active.departTs) { if(active?.departTs) toast('Départ déjà enregistré'); return; }
+  active.departTs = nowTs(); save(); renderActiveJourney();
+  toast('🚀 Départ : '+tsToTime(active.departTs));
+}
+
+function signalArr() {
+  if (!active) return;
+  if (!active.departTs) { toast("⚠️ Enregistrez le départ d'abord"); return; }
+  if (active.arriveTs)  { toast('Arrivée déjà enregistrée'); return; }
+  document.getElementById('note-input').value = '';
+  document.getElementById('modal-note').classList.add('open');
+}
+
+function confirmArrive(skipNote=false) {
+  const note = skipNote ? '' : document.getElementById('note-input').value.trim();
+  const ts = nowTs();
+  const entry = {...active, arriveTs:ts, loggedAt:ts, note};
+  logs.unshift(entry);
+  const delay = delayMin(active.fav.arr, ts);
+  active = null; save();
+  document.getElementById('modal-note').classList.remove('open');
+  renderActiveJourney(); renderFavs();
+  toast('🏁 '+(delay!==null?(delay<=0?"✅ À l'heure !":"⚠️ +"+delay+" min"):"Arrivée enregistrée !"));
+}
+function skipNote() { confirmArrive(true); }
+
+function cancelJourney() {
+  if (!active) return;
+  if (active.departTs) logs.unshift({...active, loggedAt:nowTs(), cancelled:true});
+  active=null; save(); renderActiveJourney(); renderFavs();
+  toast('Trajet annulé');
+}
+
+function renderActiveJourney() {
+  const block = document.getElementById('aj-block');
+  const pill  = document.getElementById('timer-pill');
+  if (timerInterval) { clearInterval(timerInterval); timerInterval=null; }
+  if (!active) { block.style.display='none'; pill.style.display='none'; return; }
+  block.style.display='block'; pill.style.display='block';
+  document.getElementById('aj-name').textContent = active.fav.name;
+  document.getElementById('aj-times').textContent = active.fav.dep+' → '+active.fav.arr;
+
+  function tick() {
+    const elapsed = active.departTs ? Date.now()-active.departTs : Date.now()-active.startedAt;
+    const el = fmtElapsed(elapsed);
+    document.getElementById('aj-elapsed').textContent = el;
+    document.getElementById('timer-pill').textContent = '⏱ '+el;
+
+    if (active.departTs) {
+      const [dh,dm]=active.fav.dep.split(':').map(Number), [ah,am]=active.fav.arr.split(':').map(Number);
+      const totalMs=((ah*60+am)-(dh*60+dm))*60000;
+      const pct=Math.min(100,Math.round((Date.now()-active.departTs)/totalMs*100));
+      document.getElementById('prog-fill').style.width=pct+'%';
+    }
+
+    const bdep=document.getElementById('btn-dep'), barr=document.getElementById('btn-arr');
+    const dsh=document.getElementById('dep-shown'), ash=document.getElementById('arr-shown');
+    if (active.departTs) {
+      bdep.classList.add('done');
+      const dd=delayMin(active.fav.dep,active.departTs);
+      dsh.textContent=tsToTime(active.departTs)+(dd!==null?` (${dd>0?'+':''}${dd})`:'' );
+    } else { bdep.classList.remove('done'); dsh.textContent='—'; }
+    if (active.arriveTs) { barr.classList.add('done'); ash.textContent=tsToTime(active.arriveTs); }
+    else { barr.classList.remove('done'); ash.textContent='—'; }
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+// ─── LOG ──────────────────────────────────────────────────────────────────────
+function setFilter(mode, btn) {
+  filterMode=mode;
+  document.querySelectorAll('.fil-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLog();
+}
+
+function renderLog() {
+  const list = document.getElementById('log-list');
+  let entries = logs;
+  if (filterMode!=='all') {
+    entries = logs.filter(e=>{
+      const s=entryStatus(e);
+      if (filterMode==='late') return s==='late'||s==='very-late';
+      if (filterMode==='incomplete') return s==='incomplete'||e.cancelled;
+      return s===filterMode;
+    });
+  }
+  if (!entries.length) {
+    list.innerHTML='<div class="empty"><div class="ei">📋</div><div>Aucun trajet dans cette catégorie.</div></div>';
+    return;
+  }
+  list.innerHTML = entries.map(entry=>{
+    const status=entryStatus(entry);
+    const bl=entry.cancelled?'#6b7a99':STATUS_COLOR[status];
+    const dd=delayMin(entry.fav.dep,entry.departTs), ad=delayMin(entry.fav.arr,entry.arriveTs);
+    const dtag = dd!==null?`<span class="delay-tag" style="background:${delayColor(dd)}18;color:${delayColor(dd)}">${fmtDelay(dd)}</span>`:'';
+    const atag = ad!==null?`<span class="delay-tag" style="background:${delayColor(ad)}18;color:${delayColor(ad)}">${fmtDelay(ad)}</span>`:'';
+    return `<div class="swipe-wrap" id="sw-${entry.id}">
+      <div class="swipe-del-bg" onclick="deleteLog('${entry.id}')">🗑</div>
+      <div class="log-card" style="border-left:3px solid ${bl}" 
+        ontouchstart="swipeStart(event,'${entry.id}')" 
+        ontouchmove="swipeMove(event,'${entry.id}')" 
+        ontouchend="swipeEnd(event,'${entry.id}')">
+        <div class="log-top">
+          <div class="log-name">${entry.fav.name}</div>
+          <div class="log-date">${tsToDate(entry.loggedAt||entry.startedAt)}</div>
+        </div>
+        <div class="log-times">
+          <div>
+            <div class="lt-lbl">Départ prévu</div>
+            <div class="lt-val">${entry.fav.dep}${dtag}</div>
+            <div class="lt-real">Réel: ${tsToTime(entry.departTs)}</div>
+          </div>
+          <div style="color:var(--mu);padding-top:16px;font-size:14px">→</div>
+          <div>
+            <div class="lt-lbl">Arrivée prévue</div>
+            <div class="lt-val">${entry.fav.arr}${atag}</div>
+            <div class="lt-real">Réel: ${tsToTime(entry.arriveTs)}</div>
+          </div>
+        </div>
+        ${entry.note?`<div class="log-note">💬 ${entry.note}</div>`:''}
+        ${entry.cancelled?'<div style="font-size:10px;color:var(--mu);margin-top:4px">⚠️ Annulé</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// swipe-to-delete state
+const swipeState = {};
+function swipeStart(e, id) { swipeState[id]={startX:e.touches[0].clientX, cur:0, swiping:true}; }
+function swipeMove(e, id) {
+  if (!swipeState[id]) return;
+  const dx = e.touches[0].clientX - swipeState[id].startX;
+  if (dx < 0) {
+    const clamped = Math.max(dx,-80);
+    swipeState[id].cur = clamped;
+    const card = document.querySelector(`#sw-${id} .log-card`);
+    if (card) card.style.transition='none', card.style.transform=`translateX(${clamped}px)`;
+  }
+}
+function swipeEnd(e, id) {
+  if (!swipeState[id]) return;
+  const card = document.querySelector(`#sw-${id} .log-card`);
+  if (card) {
+    card.style.transition='transform .25s ease';
+    card.style.transform = swipeState[id].cur < -50 ? 'translateX(-80px)' : 'translateX(0)';
+  }
+  delete swipeState[id];
+}
+function deleteLog(id) { logs=logs.filter(e=>e.id!==id); save(); renderLog(); }
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const complete = logs.filter(e=>e.departTs&&e.arriveTs&&!e.cancelled);
+  const delays = complete.map(e=>delayMin(e.fav.arr,e.arriveTs)).filter(d=>d!==null);
+  const avgDelay = delays.length ? Math.round(delays.reduce((a,b)=>a+b,0)/delays.length) : null;
+  const worstDelay = delays.length ? Math.max(...delays) : null;
+  const ontimePct = complete.length ? Math.round(complete.filter(e=>(delayMin(e.fav.arr,e.arriveTs)??0)<=2).length/complete.length*100) : null;
+
+  // KPIs
+  document.getElementById('stat-grid').innerHTML = [
+    ['Total trajets', logs.length, '#f0f4ff', ''],
+    ['Retard moyen', avgDelay!==null?(avgDelay>0?`+${avgDelay}`:avgDelay)+' min':'—', '#f59e0b', 'arrivées complètes'],
+    ['À l\'heure', ontimePct!==null?ontimePct+'%':'—', '#10b981', '≤2 min de retard'],
+    ['Pire retard', worstDelay!==null?(worstDelay>0?`+${worstDelay}`:worstDelay)+' min':'—', '#ef4444', ''],
+  ].map(([l,v,c,s])=>`<div class="stat-c"><div class="stat-lbl">${l}</div><div class="stat-val" style="color:${c}">${v}</div>${s?`<div class="stat-sub">${s}</div>`:''}</div>`).join('');
+
+  // Trend (8 weeks)
+  renderTrend(complete);
+
+  // DoW
+  renderDow(complete);
+
+  // Heatmap
+  renderHeatmap(logs);
+
+  // Recent 7 bars
+  const recent7 = complete.slice(0,7).reverse();
+  if (recent7.length >= 2) {
+    const maxD = Math.max(...recent7.map(e=>Math.abs(delayMin(e.fav.arr,e.arriveTs)||0)),1);
+    document.getElementById('recent-bars').innerHTML = `<div class="chart-box"><div class="chart-title">7 derniers trajets</div><div class="bar-row">${
+      recent7.map(e=>{
+        const d=delayMin(e.fav.arr,e.arriveTs)||0;
+        const h=Math.max(4,Math.round((Math.abs(d)/maxD)*70));
+        const c=d<=2?'#10b981':d<=10?'#f59e0b':'#ef4444';
+        return `<div class="bar-col"><div class="bar" style="height:${h}px;background:${c}"></div><div class="bar-lbl">${d>0?'+':''}${d}</div><div class="bar-lbl2">${tsToShort(e.loggedAt||e.startedAt)}</div></div>`;
+      }).join('')
+    }</div></div>`;
+  } else { document.getElementById('recent-bars').innerHTML=''; }
+
+  // Per route
+  const byRoute={};
+  complete.forEach(e=>{
+    if (!byRoute[e.fav.id]) byRoute[e.fav.id]={name:e.fav.name,entries:[]};
+    byRoute[e.fav.id].entries.push(e);
+  });
+  const prEl = document.getElementById('per-route');
+  const routes = Object.values(byRoute);
+  if (!routes.length) { prEl.innerHTML='<div class="sec">Par trajet favori</div><div style="color:var(--mu);font-size:13px;margin-bottom:16px">Pas encore de données.</div>'; return; }
+  prEl.innerHTML = '<div class="divider"></div><div class="sec">Par trajet favori</div>'+routes.map(route=>{
+    const rd=route.entries.map(e=>delayMin(e.fav.arr,e.arriveTs)).filter(d=>d!==null);
+    const rAvg=Math.round(rd.reduce((a,b)=>a+b,0)/rd.length);
+    const rOt=route.entries.filter(e=>(delayMin(e.fav.arr,e.arriveTs)??0)<=2).length;
+    const rPct=Math.round(rOt/route.entries.length*100);
+    const c=rPct>=80?'#10b981':rPct>=50?'#f59e0b':'#ef4444';
+    return `<div class="pr-card"><div class="pr-top"><div class="pr-name">${route.name}</div><div class="pr-pct" style="color:${c}">${rPct}%</div></div><div class="pr-bar-wrap"><div class="pr-bar-fill" style="width:${rPct}%;background:${c}"></div></div><div class="pr-sub">${route.entries.length} trajets · moy ${rAvg>0?'+':''}${rAvg}min</div></div>`;
+  }).join('');
+}
+
+function renderTrend(complete) {
+  if (complete.length < 3) { document.getElementById('trend-chart').innerHTML=''; return; }
+  const now=Date.now();
+  const weeks=Array.from({length:8},(_,i)=>({label:i<7?`S-${7-i}`:'Cette sem.',start:now-(7-i)*7*86400000,end:now-(6-i)*7*86400000,delays:[]}));
+  weeks[7].end=now+86400000;
+  complete.forEach(e=>{
+    const ts=e.loggedAt||e.startedAt;
+    const w=weeks.find(w=>ts>=w.start&&ts<w.end);
+    if(w) w.delays.push(delayMin(e.fav.arr,e.arriveTs)??0);
+  });
+  const avgs=weeks.map(w=>w.delays.length?Math.round(w.delays.reduce((a,b)=>a+b,0)/w.delays.length):null);
+  const valid=avgs.filter(v=>v!==null);
+  if (valid.length<2) { document.getElementById('trend-chart').innerHTML=''; return; }
+  const minV=Math.min(...valid,0), maxV=Math.max(...valid,5), range=maxV-minV||1, H=80;
+  const pts=avgs.map((v,i)=>v!==null?{x:(i/(weeks.length-1))*100,y:H-((v-minV)/range)*H,v}:null).filter(Boolean);
+  const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
+  document.getElementById('trend-chart').innerHTML=`<div class="chart-box">
+    <div class="chart-title">Tendance retard moyen (8 semaines)</div>
+    <svg viewBox="0 0 100 ${H}" style="width:100%;height:${H}px;overflow:visible">
+      <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>
+      ${minV<0?`<line x1="0" y1="${H-((0-minV)/range)*H}" x2="100" y2="${H-((0-minV)/range)*H}" stroke="#1e2d45" stroke-width="0.5" stroke-dasharray="2,2"/>`:'' }
+      <polygon points="${pts[0].x},${H} ${poly} ${pts[pts.length-1].x},${H}" fill="url(#tg)"/>
+      <polyline points="${poly}" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="${p.v>10?'#ef4444':p.v>2?'#f59e0b':'#10b981'}" stroke="#0a0f1e" stroke-width="1"/>`).join('')}
+    </svg>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      ${weeks.map((w,i)=>`<div style="font-size:8px;color:${avgs[i]!==null?'#6b7a99':'#2a3a55'};font-family:var(--mono);text-align:center">${w.label}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderDow(complete) {
+  if (complete.length < 5) { document.getElementById('dow-chart').innerHTML=''; return; }
+  const byDow=Array.from({length:7},()=>({delays:[]}));
+  complete.forEach(e=>{ const dow=new Date(e.loggedAt||e.startedAt).getDay(); byDow[dow].delays.push(delayMin(e.fav.arr,e.arriveTs)??0); });
+  const avgs=byDow.map(d=>d.delays.length?Math.round(d.delays.reduce((a,b)=>a+b,0)/d.delays.length):null);
+  const maxA=Math.max(...avgs.filter(v=>v!==null),1);
+  document.getElementById('dow-chart').innerHTML=`<div class="chart-box"><div class="chart-title">Retard par jour de la semaine</div><div class="dow-row">
+    ${avgs.map((avg,i)=>{
+      const h=avg!==null?Math.max(4,Math.round((avg/maxA)*60)):4;
+      const c=avg===null?'#1e2d45':avg<=2?'#10b981':avg<=10?'#f59e0b':'#ef4444';
+      return `<div class="dow-col"><div style="font-size:9px;color:${avg!==null?c:'#2a3a55'};font-family:var(--mono)">${avg!==null?(avg>0?'+':'')+avg:'—'}</div><div style="width:100%;height:${h}px;background:${c};border-radius:3px 3px 0 0"></div><div style="font-size:9px;color:var(--mu);font-family:var(--mono)">${DAY_NAMES[i]}</div></div>`;
+    }).join('')}
+  </div></div>`;
+}
+
+function renderHeatmap(logs) {
+  const now=new Date(), year=now.getFullYear(), month=now.getMonth();
+  const firstDay=new Date(year,month,1).getDay(), daysInMonth=new Date(year,month+1,0).getDate();
+  const dayMap={};
+  logs.forEach(e=>{
+    if (!e.arriveTs) return;
+    const d=new Date(e.loggedAt||e.startedAt);
+    if (d.getFullYear()===year&&d.getMonth()===month) {
+      const k=d.getDate();
+      if (!dayMap[k]) dayMap[k]=[];
+      dayMap[k].push(delayMin(e.fav.arr,e.arriveTs)??0);
+    }
+  });
+  const cells=[];
+  for(let i=0;i<firstDay;i++) cells.push(null);
+  for(let d=1;d<=daysInMonth;d++) cells.push(d);
+  const cellBg=d=>{
+    if(!d||!dayMap[d]) return '#1a2235';
+    const avg=dayMap[d].reduce((a,b)=>a+b,0)/dayMap[d].length;
+    if(avg<=2) return '#10b98155'; if(avg<=10) return '#f59e0b55'; return '#ef444455';
+  };
+  document.getElementById('heatmap').innerHTML=`<div class="chart-box"><div class="chart-title">Heatmap — ${MONTH_NAMES[month]} ${year}</div>
+    <div class="hm-grid" style="margin-bottom:6px">${["D","L","M","M","J","V","S"].map(d=>`<div style="font-size:9px;text-align:center;color:var(--mu);font-family:var(--mono)">${d}</div>`).join('')}</div>
+    <div class="hm-grid">${cells.map(d=>`<div class="hm-cell" style="background:${cellBg(d)};border:1px solid ${d&&d===now.getDate()?'#3b82f6':'#1e2d4533'}">${d?`<span style="color:${dayMap[d]?'#f0f4ff':'#6b7a99'}">${d}</span>`:''}</div>`).join('')}</div>
+    <div class="hm-legend">${[['#10b981','≤2min'],['#f59e0b','≤10min'],['#ef4444','>10min'],['#1a2235','—']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:4px"><div class="hm-dot" style="background:${c}55;border:1px solid ${c}44"></div><span style="font-size:9px;color:var(--mu);font-family:var(--mono)">${l}</span></div>`).join('')}</div>
+  </div>`;
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!logs.length) { toast('Aucune donnée'); return; }
+  let csv='Date,Trajet,Dep prévu,Dep réel,Retard dep,Arr prévu,Arr réel,Retard arr,Statut,Note\n';
+  logs.forEach(e=>{
+    const dd=delayMin(e.fav.dep,e.departTs), ad=delayMin(e.fav.arr,e.arriveTs);
+    csv+=[tsToDate(e.loggedAt||e.startedAt),`"${e.fav.name}"`,e.fav.dep,tsToTime(e.departTs),dd??'',e.fav.arr,tsToTime(e.arriveTs),ad??'',e.cancelled?'Annulé':entryStatus(e),`"${e.note||''}"`].join(',')+'\n';
+  });
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='trainlog.csv'; a.click();
+  toast('📥 Export téléchargé');
+}
+
+function clearAll() {
+  if (!confirm('Effacer toutes les données (favoris + journal) ?')) return;
+  favs=[]; logs=[]; active=null; save();
+  renderFavs(); renderLog(); renderStats();
+  toast('🗑 Données effacées');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderFavs();
+renderActiveJourney();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
